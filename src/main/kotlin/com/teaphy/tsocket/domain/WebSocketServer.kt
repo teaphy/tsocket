@@ -1,6 +1,7 @@
 package com.teaphy.tsocket.domain
 
 import io.reactivex.rxjava3.core.Flowable
+import io.reactivex.rxjava3.disposables.Disposable
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -17,6 +18,9 @@ import javax.websocket.server.ServerEndpoint
 @ServerEndpoint(value = "/ws/asset")
 @Component
 class WebSocketServer {
+
+    var dispose: Disposable? = null
+
     @PostConstruct
     fun init() {
         println("websocket 加载")
@@ -32,7 +36,7 @@ class WebSocketServer {
         log.info("有连接加入，当前连接数为：{}", cnt)
         SendMessage(session, "连接成功")
 
-        Flowable.interval(3, TimeUnit.SECONDS)
+        dispose = Flowable.interval(3, TimeUnit.SECONDS)
                 .subscribe {
                     val time = LocalTime.now()
                     SendMessage(session, "当前时间：$time")
@@ -47,6 +51,7 @@ class WebSocketServer {
         SessionSet.remove(session)
         val cnt = OnlineCount.decrementAndGet()
         log.info("有连接关闭，当前连接数为：{}", cnt)
+        dispose?.dispose()
     }
 
     /**
